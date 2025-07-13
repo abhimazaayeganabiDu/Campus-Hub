@@ -15,9 +15,80 @@ datasource db {
 }
 
 
+enum Role {
+  STUDENT
+  FACULTY
+  ADMIN
+}
+
+enum ExamType {
+  MIDTERM
+  FINAL
+}
+
 model User {
   id String @id @default(uuid())
   name String 
   email String @unique
   password String
+  course Course? @relation(fields: [course], reference: [id])
+  role Role @default(STUDENT)
+  isVarified Boolean @default(false)
+  varificationToken String?
+  varificationTokenExpiry DateTime?
+  passwordToken String?
+  passwordTokenExpiry DateTime?
+  refreshToken String?
+  refreshTokenExpiry String?
+  accessToken String?
+  accessTokenExpiry String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  announcements Announcemnts[]
 }
+
+model Announcemnts {
+  id String @id @default(uuid())
+  title String 
+  content String 
+  attachments String?
+  visibleToStudent Boolean(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Results {
+  id string @id @default(uuid())
+  studentId String
+  course String
+  academicYear String
+  semester Int
+  examType ExamType @default(MIDTERM)
+  subjectIds Subject[]
+  marksObtained Float
+  totalMarks Float
+  grade String
+  publishedBy String 
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+
+model Course {
+  id String @default (uuid())
+  name String
+  code String
+  students User[]
+}
+
+model Subject {
+  id String @default (uuid())
+  code String
+  name String
+  credits Int
+  maxMarks Int
+  marksObtained Int
+}
+
