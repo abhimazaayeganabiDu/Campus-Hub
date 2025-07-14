@@ -14,7 +14,6 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-
 enum Role {
   STUDENT
   FACULTY
@@ -27,68 +26,71 @@ enum ExamType {
 }
 
 model User {
-  id String @id @default(uuid())
-  name String 
-  email String @unique
-  password String
-  course Course? @relation(fields: [course], reference: [id])
-  role Role @default(STUDENT)
-  isVarified Boolean @default(false)
-  varificationToken String?
+  id                      String    @id @default(uuid())
+  name                    String
+  email                   String    @unique
+  password                String
+  courseId                String?
+  role                    Role      @default(STUDENT)
+  isVarified              Boolean   @default(false)
+  varificationToken       String?
   varificationTokenExpiry DateTime?
-  passwordToken String?
-  passwordTokenExpiry DateTime?
-  refreshToken String?
-  refreshTokenExpiry String?
-  accessToken String?
-  accessTokenExpiry String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  passwordToken           String?
+  passwordTokenExpiry     DateTime?
+  refreshToken            String?
+  refreshTokenExpiry      String?
+  accessToken             String?
+  accessTokenExpiry       String?
+  createdAt               DateTime  @default(now())
+  updatedAt               DateTime  @updatedAt
 
   announcements Announcemnts[]
+  course        Course?        @relation(fields: [courseId], references: [id])
 }
 
 model Announcemnts {
-  id String @id @default(uuid())
-  title String 
-  content String 
-  attachments String?
-  visibleToStudent Boolean(true)
+  id               String  @id @default(uuid())
+  title            String
+  content          String
+  attachments      String?
+  visibleToStudent Boolean @default(true)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  User      User?    @relation(fields: [userId], references: [id])
+  userId    String?
 }
 
 model Results {
-  id string @id @default(uuid())
-  studentId String
-  course String
-  academicYear String
-  semester Int
-  examType ExamType @default(MIDTERM)
-  subjectIds Subject[]
+  id            String    @id @default(uuid())
+  studentId     String
+  course        String
+  academicYear  String
+  semester      Int
+  examType      ExamType  @default(MIDTERM)
+  subjectIds    Subject[]
   marksObtained Float
-  totalMarks Float
-  grade String
-  publishedBy String 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  totalMarks    Float
+  grade         String
+  publishedBy   String
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
 }
 
-
 model Course {
-  id String @default (uuid())
-  name String
-  code String
+  id       String @unique @default(uuid())
+  name     String
+  code     String
   students User[]
 }
 
 model Subject {
-  id String @default (uuid())
-  code String
-  name String
-  credits Int
-  maxMarks Int
+  id            String   @unique @default(uuid())
+  code          String
+  name          String
+  credits       Int
+  maxMarks      Int
   marksObtained Int
+  Results       Results? @relation(fields: [resultsId], references: [id])
+  resultsId     String?
 }
-
