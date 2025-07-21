@@ -1,6 +1,6 @@
-import express, { urlencoded } from "express"
 import cookieParser from "cookie-parser";
-import dotenv from "dotenv"
+import dotenv from "dotenv";
+import express from "express";
 
 
 const app = express();
@@ -14,13 +14,13 @@ app.use(cookieParser())
 dotenv.config()
 
 // Routes import here
-import authRoutes from "./routes/auth.Route.js"
 import { healthCheck } from "./controllers/health.controller.js";
+import authRoutes from "./routes/auth.Route.js";
 
 
 // route add here
-app.use("api/v1", healthCheck)
-app.use("api/v1/auth", authRoutes)
+app.use("/api/v1/check", healthCheck)
+app.use("/api/v1/auth", authRoutes)
 
 
 
