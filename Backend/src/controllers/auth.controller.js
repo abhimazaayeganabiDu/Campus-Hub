@@ -47,6 +47,9 @@ const register = asyncHandler(async (req, res) => {
     if (!role) {
         throw new apiError(400, "Please enter your role.")
     }
+    if (role == "STUDENT" && !courseId) {
+        throw new apiError(400, "Please select your Course.")
+    }
 
     const existingUser = await db.user.findFirst({
         where: {
@@ -85,7 +88,7 @@ const register = asyncHandler(async (req, res) => {
             id: true,
             name: true,
             email: true,
-            courseId: true,
+            courseId: role == "STUDENT" ? true : false,
             role: true,
             isVarified: true,
             createdAt: true,
@@ -98,7 +101,7 @@ const register = asyncHandler(async (req, res) => {
     }
 
     // email send 
-    // const verificationUrl = 
+    // const verificationUrl = ``
 
 
     res.status(200).json(new apiResponse(200, newUser, "User created sucessfully."))
@@ -247,6 +250,62 @@ const logout = asyncHandler(async (req, res) => {
     return res.status(200).json(new apiResponse(200, {}, "User Logged Out Sucessfully."))
 })
 
+const forgotPasswordRequest = asyncHandler(async (req, res) => {
+
+})
+
+const resetPassword = asyncHandler(async (req, res) => {
+
+})
+
+const verifyEmail = asyncHandler(async (req, res) => {
+    
+})
+
+const changeEmailRequest = asyncHandler(async (req, res) => {
+    const { prevEmail, newEmail, password } = req.body
+
+    if (!(prevEmail && newEmail && password)) {
+        throw new apiError(401, "Please enter all credentials.");
+    }
+
+    const user = await db.user.findFirst({
+        where: { email: prevEmail }, select: {
+            id: true,
+            email: true,
+            password: true
+        }
+    })
+
+    if (!user) {
+        throw new apiError(401, "User not found with this email.")
+    }
+
+    const isMatchedPassword = bcrypt.compare(password, user.password);
+
+    if (!isMatchedPassword) {
+        throw new apiError(401, "Please enter correct password.")
+    }
+
+    const otp1 = crypto.randomInt(100000, 1000000) 
+    const otp2 = crypto.randomInt(100000, 1000000) 
+
+    const updatedUser = await db.user.update({where: {id: user.id}, data: {
+        newTempEmail: newEmail,
+        otp1,
+        otp2
+
+    },
+    select: {
+        id:true,
+        name: true,
+        
+    }
+})
+    
+
+    return res.status(200).json(new apiResponse(200, updatedUser, "Email change request send sucessfully."))
+})
 
 const getMyDetails = asyncHandler(async (req, res) => {
 
@@ -271,6 +330,21 @@ const getMyDetails = asyncHandler(async (req, res) => {
 
     return res.status(200).json(new apiResponse(200, user, "User fetched sucessfully."))
 })
+
+// Only Admin can access this endpoints 
+const changeRole = asyncHandler(async (req, res) => {
+
+})
+
+const changeName = asyncHandler(async (req, res) => {
+
+})
+
+const changeCourse = asyncHandler(async (req, res) => {
+
+})
+
+
 
 
 
