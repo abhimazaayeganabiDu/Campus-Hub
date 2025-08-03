@@ -1,5 +1,5 @@
 import crypto from 'crypto'
-
+import jwt from "jsonwebtoken"
 import { db } from '../libs/db.js'
 import bcrypt from 'bcryptjs'
 import { asyncHandler } from '../utils/api-async-handler.js'
@@ -107,23 +107,21 @@ const register = asyncHandler(async (req, res) => {
 
 
 const login = asyncHandler(async (req, res) => {
-    const { email, password, role } = req.body();
+    const { email, password, role } = req.body;
 
     if (!email || !password) {
         throw new apiError(400, "Please enter all credentials.")
     }
 
     const existingUser = await db.user.findUnique({
-        where:
-            { email }
+        where: {
+            email
+        },
     })
 
     if (!existingUser) {
         throw new apiError(404, "User not found in DB.")
     }
-
-    console.log("pd", existingUser);
-
 
     const isCorrect = await bcrypt.compare(password, existingUser.password);
 
@@ -132,8 +130,8 @@ const login = asyncHandler(async (req, res) => {
     }
 
     const { accessToken, refreshToken } = generateLoginTokens(existingUser.id, existingUser.email);
-    const refreshTokenExpiry = new Date(Date.now() + 2 * 24 * 60 * 60 * 1000)
-    const accessTokenExpiry = new Date(Date.now() + 12 * 60 * 60 * 1000)
+    const refreshTokenExpiry = (Date.now() + 2 * 24 * 60 * 60 * 1000).toString()
+    const accessTokenExpiry = new Date(Date.now() + 12 * 60 * 60 * 1000).toString()
 
 
     res.cookie("ACCESS_TOKEN", accessToken, {
@@ -157,11 +155,21 @@ const login = asyncHandler(async (req, res) => {
             refreshTokenExpiry,
             accessToken,
             accessTokenExpiry
+        },
+        select: {
+            id: true,
+            name: true,
+            email: true,
+            courseId: true,
+            role: true,
+            isVarified: true,
+            createdAt: true,
+            updatedAt: true,
         }
     })
 
 
-    return res.staus(200).json(new apiResponse(200, {
+    return res.status(200).json(new apiResponse(200, {
         logedInUser,
     }, "User logged in sucessfully."))
 
@@ -180,8 +188,8 @@ const verifyUser = asyncHandler(async (req, res) => {
     const user = await db.user.findFirst({
         where: {
             varificationToken: hashedToken,
-            expiresAt: {
-                gt: now
+            varificationTokenExpiry: {
+                gt: (new Date())
             }
         }
     })
@@ -236,19 +244,32 @@ const logout = asyncHandler(async (req, res) => {
         }
     })
 
-    return res.status(200).json(200, {}, "User Logged Out Sucessfully.")
+    return res.status(200).json(new apiResponse(200, {}, "User Logged Out Sucessfully."))
 })
 
 
 const getMyDetails = asyncHandler(async (req, res) => {
-    const user = await db.user.findFirst({where: {id: req.user.id}}) ;
 
-    if(!user) {
+
+    const user = await db.user.findFirst({
+        where: { id: req.user.id },
+        select: {
+            id: true,
+            name: true,
+            email: true,
+            courseId: true,
+            role: true,
+            isVarified: true,
+            createdAt: true,
+            updatedAt: true
+        }
+    });
+
+    if (!user) {
         throw new apiError(401, "unothorized")
     }
 
-    return res.status(200, user, "User fetched sucessfully.")
-
+    return res.status(200).json(new apiResponse(200, user, "User fetched sucessfully."))
 })
 
 
