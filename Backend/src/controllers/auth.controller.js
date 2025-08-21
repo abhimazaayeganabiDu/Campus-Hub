@@ -5,6 +5,7 @@ import bcrypt from 'bcryptjs'
 import { asyncHandler } from '../utils/api-async-handler.js'
 import { apiError } from '../utils/api-error.js'
 import { apiResponse } from '../utils/api-response.js'
+import {emailVerificationMailGenContent, sendEmail} from '../utils/send-email.js'
 
 const generateTemperoryToken = () => {
     const unHashedToken = crypto.randomBytes(10).toString('hex')
@@ -33,7 +34,7 @@ const generateLoginTokens = (email, id) => {
 }
 
 const register = asyncHandler(async (req, res) => {
-    const { name, email, password, courseId, role } = req.body
+    const { name, email, password, role } = req.body
 
     if (!name) {
         throw new apiError(400, "Please enter your name.")
@@ -47,9 +48,7 @@ const register = asyncHandler(async (req, res) => {
     if (!role) {
         throw new apiError(400, "Please enter your role.")
     }
-    if (role == "STUDENT" && !courseId) {
-        throw new apiError(400, "Please select your Course.")
-    }
+    
 
     const existingUser = await db.user.findFirst({
         where: {
@@ -72,7 +71,6 @@ const register = asyncHandler(async (req, res) => {
             name,
             email,
             password: hashedPassword,
-            courseId: courseId || null,
             role,
             isVarified: false,
             varificationToken: hashedToken,
@@ -88,7 +86,6 @@ const register = asyncHandler(async (req, res) => {
             id: true,
             name: true,
             email: true,
-            courseId: role == "STUDENT" ? true : false,
             role: true,
             isVarified: true,
             createdAt: true,
@@ -101,8 +98,14 @@ const register = asyncHandler(async (req, res) => {
     }
 
     // email send 
-    // const verificationUrl = ``
-
+    const verificationUrl = `${process.env.CLIENT_URL}/verify-email/${unHashedToken}`
+    const mailgenContent = emailVerificationMailGenContent(name, verificationUrl)
+    
+    sendEmail({
+        mailgenContent,
+        email,
+        subject: "For user verification"
+    })
 
     res.status(200).json(new apiResponse(200, newUser, "User created sucessfully."))
 
